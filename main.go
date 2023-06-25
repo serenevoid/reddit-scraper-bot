@@ -43,7 +43,7 @@ func main() {
 	}
 
 	// Create a new Discord session with the bot token
-	dg, err := discordgo.New("Bot" + token)
+	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
 		fmt.Println("Error creating Discord session:", err)
 		return
