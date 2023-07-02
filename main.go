@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-    "os"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-    "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -28,14 +28,14 @@ type RedditResponse struct {
 
 func main() {
 
-    // Load environment variables from .env file
+	// Load environment variables from .env file
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file:", err)
 		return
 	}
 
-    // Get the bot token from the environment variable
+	// Get the bot token from the environment variable
 	token := os.Getenv("BOT_TOKEN")
 	if token == "" {
 		fmt.Println("Discord bot token not found in environment variable.")
@@ -73,27 +73,27 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-    if (len(m.Content) >= 5) && m.Content[:5] == ".show" {
+	if (len(m.Content) >= 5) && m.Content[:5] == ".show" {
 		str := strings.Split(m.Content, " ")
 		if len(str) != 2 {
 			s.ChannelMessageSend(m.ChannelID, "Please provide the command and subreddit name.")
 		} else {
 			s.ChannelMessageSend(m.ChannelID, "Please wait while I fetch the data for you.")
-            if isFetched, err := getData(m.ChannelID, str[1]); !isFetched {
+			if isFetched, err := getData(m.ChannelID, str[1]); !isFetched {
 				s.ChannelMessageSend(m.ChannelID, err)
 			} else {
-                if len(data[m.ChannelID + str[1]]) > 0 {
-                    current_sub[m.ChannelID] = m.ChannelID + str[1]
-                    sendPost(s, m.ChannelID)
-                } else {
-                    s.ChannelMessageSend(m.ChannelID, "Please run `.show` command to get new data.")
-                }
+				if len(data[m.ChannelID+str[1]]) > 0 {
+					current_sub[m.ChannelID] = m.ChannelID + str[1]
+					sendPost(s, m.ChannelID)
+				} else {
+					s.ChannelMessageSend(m.ChannelID, "Please run `.show` command to get new data.")
+				}
 			}
 		}
 	}
-    if (len(m.Content) >= 5) && m.Content[:5] == ".help" {
-        s.ChannelMessageSend(m.ChannelID, "Please provide the command and subreddit name to start like `.show awww`")
-    }
+	if (len(m.Content) >= 5) && m.Content[:5] == ".help" {
+		s.ChannelMessageSend(m.ChannelID, "Please provide the command and subreddit name to start like `.show awww`")
+	}
 }
 
 func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -107,20 +107,20 @@ func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			Type: discordgo.InteractionResponseDeferredMessageUpdate,
 		})
 		// Send the next message
-        if (current_sub[i.ChannelID] == "") {
-            s.ChannelMessageSend(i.ChannelID, "Please choose a subreddit with the `.show` command")
-        } else {
-            sendPost(s, i.ChannelID)
-        }
+		if current_sub[i.ChannelID] == "" {
+			s.ChannelMessageSend(i.ChannelID, "Please choose a subreddit with the `.show` command")
+		} else {
+			sendPost(s, i.ChannelID)
+		}
 		// }
 	}
 }
 
 func sendPost(s *discordgo.Session, channelID string) {
 	button1 := discordgo.Button{
-		Label: "More",
-		Style: discordgo.PrimaryButton,
-        CustomID: "more",
+		Label:    "More",
+		Style:    discordgo.PrimaryButton,
+		CustomID: "more",
 	}
 	sub := current_sub[channelID]
 	value := data[sub][len(data[sub])-1]
@@ -134,12 +134,12 @@ func sendPost(s *discordgo.Session, channelID string) {
 	}
 	_, err := s.ChannelMessageSendComplex(channelID, messageSend)
 	if err != nil {
-        fmt.Println("Cannot send message:", err)
+		fmt.Println("Cannot send message:", err)
 	}
 }
 
 func getData(channelID string, subreddit string) (bool, string) {
-    urls := make([]string, 0)
+	urls := make([]string, 0)
 	// Send an HTTP GET request to the Reddit API endpoint
 	url := "https://www.reddit.com/r/" + subreddit + ".json"
 	response, err := http.Get(url + "?limit=100")
@@ -159,6 +159,6 @@ func getData(channelID string, subreddit string) (bool, string) {
 	for _, child := range redditResponse.Data.Children {
 		urls = append(urls, child.Data.URL)
 	}
-    data[channelID + subreddit] = urls
+	data[channelID+subreddit] = urls
 	return true, ""
 }
