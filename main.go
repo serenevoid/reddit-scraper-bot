@@ -82,8 +82,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if isFetched, err := getData(m.ChannelID, str[1]); !isFetched {
 				s.ChannelMessageSend(m.ChannelID, err)
 			} else {
-				if len(data[m.ChannelID + "_" + str[1]]) > 0 {
-					current_sub[m.ChannelID] = m.ChannelID + "_" + str[1]
+				if len(data[m.ChannelID]) > 0 {
+					current_sub[m.ChannelID] = str[1]
 					sendPost(s, m.ChannelID, m.Author.Username)
 				} else {
 					s.ChannelMessageSend(m.ChannelID, "Please run `.show` command to get new data.")
@@ -117,9 +117,8 @@ func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 }
 
 func sendPost(s *discordgo.Session, channelID string, user string) {
-	sub := current_sub[channelID]
-	value := data[sub][len(data[sub])-1]
-	data[sub] = data[sub][:len(data[sub])-1]
+	value := data[channelID][0]
+	data[channelID] = data[channelID][1:]
 
 	button1 := discordgo.Button{
 		Label:    "More",
@@ -129,12 +128,12 @@ func sendPost(s *discordgo.Session, channelID string, user string) {
 
 	// Create a message send struct
 	embed := discordgo.MessageEmbed{
-		Title: "r/" + strings.Split(sub, "_")[1],
+		Title: "r/" + current_sub[channelID],
 		Color: 0xFF4500,
 		Image: &discordgo.MessageEmbedImage{
 			URL: value,
 		},
-    URL: "https://www.reddit.com/r/" + strings.Split(sub, "_")[1],
+    URL: "https://www.reddit.com/r/" + current_sub[channelID],
 		Footer: &discordgo.MessageEmbedFooter{
 			Text: user,
 		},
@@ -181,6 +180,6 @@ func getData(channelID string, subreddit string) (bool, string) {
 			}
 		}
 	}
-	data[channelID + "_" + subreddit] = urls
+	data[channelID] = urls
 	return true, ""
 }
