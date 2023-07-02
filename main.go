@@ -82,9 +82,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if isFetched, err := getData(m.ChannelID, str[1]); !isFetched {
 				s.ChannelMessageSend(m.ChannelID, err)
 			} else {
-				if len(data[m.ChannelID+str[1]]) > 0 {
-					current_sub[m.ChannelID] = m.ChannelID + str[1]
-					sendPost(s, m.ChannelID)
+				if len(data[m.ChannelID + "_" + str[1]]) > 0 {
+					current_sub[m.ChannelID] = m.ChannelID + "_" + str[1]
+					sendPost(s, m.ChannelID, m.Author.Username)
 				} else {
 					s.ChannelMessageSend(m.ChannelID, "Please run `.show` command to get new data.")
 				}
@@ -110,28 +110,44 @@ func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if current_sub[i.ChannelID] == "" {
 			s.ChannelMessageSend(i.ChannelID, "Please choose a subreddit with the `.show` command")
 		} else {
-			sendPost(s, i.ChannelID)
+			sendPost(s, i.ChannelID, i.Member.User.Username)
 		}
 		// }
 	}
 }
 
-func sendPost(s *discordgo.Session, channelID string) {
+func sendPost(s *discordgo.Session, channelID string, user string) {
+	sub := current_sub[channelID]
+	value := data[sub][len(data[sub])-1]
+	data[sub] = data[sub][:len(data[sub])-1]
+
 	button1 := discordgo.Button{
 		Label:    "More",
 		Style:    discordgo.PrimaryButton,
 		CustomID: "more",
 	}
-	sub := current_sub[channelID]
-	value := data[sub][len(data[sub])-1]
-	data[sub] = data[sub][:len(data[sub])-1]
+
 	// Create a message send struct
+	embed := discordgo.MessageEmbed{
+		Title: "r/" + strings.Split(sub, "_")[1],
+		Color: 0xFF4500,
+		Image: &discordgo.MessageEmbedImage{
+			URL: value,
+		},
+    URL: "https://www.reddit.com/r/" + strings.Split(sub, "_")[1],
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: user,
+		},
+	}
+
 	messageSend := &discordgo.MessageSend{
-		Content: value,
+		Embed: &embed,
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{Components: []discordgo.MessageComponent{button1}},
 		},
 	}
+
+	// Send the embedded message
 	_, err := s.ChannelMessageSendComplex(channelID, messageSend)
 	if err != nil {
 		fmt.Println("Cannot send message:", err)
@@ -157,8 +173,14 @@ func getData(channelID string, subreddit string) (bool, string) {
 
 	// Iterate over the children and print the titles and URLs
 	for _, child := range redditResponse.Data.Children {
-		urls = append(urls, child.Data.URL)
+		url := child.Data.URL
+		links := []string{"i.redd.it", "catbox.moe"}
+		for _, link := range links {
+			if strings.Index(url, link) != -1 {
+				urls = append(urls, url)
+			}
+		}
 	}
-	data[channelID+subreddit] = urls
+	data[channelID + "_" + subreddit] = urls
 	return true, ""
 }
