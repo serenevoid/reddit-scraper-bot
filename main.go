@@ -118,7 +118,7 @@ func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 func sendPost(s *discordgo.Session, channelID string, user string) {
   if len(data) <= 0 {
-    s.ChannelMessageSend(i.ChannelID, "Empty list. Please choose a new subreddit.")
+    s.ChannelMessageSend(channelID, "Empty list. Please choose a new subreddit.")
     return 
   }
 	value := data[channelID][0]
